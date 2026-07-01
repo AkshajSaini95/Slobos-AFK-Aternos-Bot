@@ -2077,3 +2077,83 @@ addLog(
 addLog("=".repeat(50));
 
 createBot();
+// ============================================================
+// MINEFLAYER BOT SETUP & ADVANCED ANTI-AFK LOGIC
+// ============================================================
+let bot;
+
+function createBot() {
+    addLog("Attempting to connect bot to " + config.server.ip);
+    
+    bot = mineflayer.createBot({
+        host: config.server.ip,
+        port: parseInt(config.server.port) || 25565,
+        username: config.name || "AFK_Bot",
+        version: config.server.version || false
+    });
+
+    // Load the pathfinder plugin for actual walking movements
+    bot.loadPlugin(pathfinder);
+
+    botState.connected = false;
+
+    bot.on('spawn', () => {
+        botState.connected = true;
+        botState.reconnectAttempts = 0;
+        addLog("[Success] Bot has spawned in the world!");
+
+        // 1. CHAT LOOP: Sends an active signal every 4 minutes
+        const chatInterval = setInterval(() => {
+            if (!botState.connected) return clearInterval(chatInterval);
+            const randomID = Math.floor(Math.random() * 1000);
+            bot.chat(`[AFK Pulse] Active verification ID: (${randomID})`);
+        }, 240000); 
+
+        // 2. ADVANCED RANDOM MOVEMENT LOOP: Walks to a random spot every 40 seconds
+        const moveInterval = setInterval(() => {
+            if (!botState.connected || !bot.entity) return clearInterval(moveInterval);
+            
+            // Get the bot's current position
+            const currentPos = bot.entity.position;
+            
+            // Pick a random X and Z coordinate within 3 blocks of where it is standing
+            const randomX = currentPos.x + (Math.random() * 6 - 3);
+            const randomZ = currentPos.z + (Math.random() * 6 - 3);
+            const targetY = currentPos.y; // Keep it on the same floor level
+
+            addLog(`[Control] Walking to random AFK spot: X: ${Math.floor(randomX)}, Z: ${Math.floor(randomZ)}`);
+
+            // Tell the bot to pathfind and walk to that block
+            const defaultMovements = new Movements(bot);
+            bot.pathfinder.setMovements(defaultMovements);
+            bot.pathfinder.setGoal(new GoalBlock(randomX, targetY, randomZ));
+
+            // Small jump for extra activity tracking
+            setTimeout(() => {
+                bot.setControlState('jump', true);
+                setTimeout(() => bot.setControlState('jump', false), 300);
+            }, 2000);
+
+        }, 40000); // Runs every 40 seconds
+    });
+
+    bot.on('end', (reason) => {
+        botState.connected = false;
+        addLog(`[Warn] Bot disconnected. Reason: ${reason}`);
+        setTimeout(() => {
+            botState.reconnectAttempts++;
+            createBot();
+        }, 10000);
+    });
+
+    bot.on('error', (err) => {
+        addLog(`[Error] Mineflayer encounter: ${err.message}`);
+        botState.errors.push({ time: Date.now(), msg: err.message });
+    });
+}
+
+// Start both the Express server dashboard and the Minecraft Bot core loop
+app.listen(PORT, () => {
+    addLog(`Dashboard Web Service active on port ${PORT}`);
+    createBot(); 
+});
