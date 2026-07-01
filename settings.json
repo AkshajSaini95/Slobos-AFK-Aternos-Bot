@@ -6,7 +6,7 @@
     "type": "offline"
   },
   "server": {
-    "ip": "mudminnow.aternos.host",
+    "ip": "blobfish.aternos.host",
     "port": 26323,
     "version": "",
     "try-creative": false
