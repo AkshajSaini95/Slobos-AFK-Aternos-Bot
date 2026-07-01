@@ -14,7 +14,7 @@ const https = require("https");
 // ============================================================
 const app = express();
 app.use(express.json());
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT, 10) || 5000;
 
 // Bot state tracking
 let botState = {
@@ -2152,7 +2152,7 @@ function createBot() {
 }
 
 // Start both the Express server dashboard and the Minecraft Bot core loop
-app.listen(PORT, () => {
+app.listen(parseInt(PORT, 10), () => {
     addLog(`Dashboard Web Service active on port ${PORT}`);
     createBot(); 
 });
