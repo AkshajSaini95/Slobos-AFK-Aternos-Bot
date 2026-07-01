@@ -2080,7 +2080,6 @@ createBot();
 // ============================================================
 // MINEFLAYER BOT SETUP & ADVANCED ANTI-AFK LOGIC
 // ============================================================
-let bot;
 
 function createBot() {
     addLog("Attempting to connect bot to " + config.server.ip);
